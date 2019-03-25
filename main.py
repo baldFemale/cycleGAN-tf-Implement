@@ -14,12 +14,12 @@ img_layer = 3
 
 batch_size = 1
 pool_size = 50
-max_images = 100
+max_images = 300
 
 to_restore = False
 save_training_images = False
-to_train = True
-to_test = False
+to_train = False
+to_test = True
 out_path = "./output"
 check_dir = "./output/checkpoints/"
 
@@ -190,14 +190,14 @@ class CycleGAN():
             if not os.path.exists(check_dir):
                 os.makedirs(check_dir)
 
-            for epoch in range(sess.run(self.global_step),100):
+            for epoch in range(sess.run(self.global_step),500):
                 print("In the epoch",epoch)
                 saver.save(sess,os.path.join(check_dir,"cycleGAN"),global_step=epoch)
 
                 if epoch<100:
                     curr_lr = 0.0002
                 else:
-                    curr_lr = 0.0002-0.0002*(epoch-100)/100
+                    curr_lr = 0.0002-0.0002*(epoch-100)/400
 
                 if save_training_images:
                     self.save_training_images(sess,epoch)
@@ -253,14 +253,14 @@ class CycleGAN():
         self.input_setup()
         self.model_setup()
         saver = tf.train.Saver()
-        init = tf.global_variables_initializer()
+        init = [tf.local_variables_initializer(),tf.global_variables_initializer()]
 
         with tf.Session() as sess:
             sess.run(init)
             self.input_read(sess)
 
             chkpt_fname = tf.train.latest_checkpoint(check_dir)
-            saver.restore(chkpt_fname)
+            saver.restore(sess,chkpt_fname)
 
             if not os.path.exists("./output/imgs/test"):
                 os.makedirs("./output/imgs/test")
