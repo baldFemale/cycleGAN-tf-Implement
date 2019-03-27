@@ -1,8 +1,10 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES']='1'
+
 import tensorflow as tf
 import numpy as np
 from scipy.misc import imsave
 import random
-import os
 import time
 
 from layers import *
@@ -14,12 +16,12 @@ img_layer = 3
 
 batch_size = 1
 pool_size = 50
-max_images = 300
+max_images = 1050
 
 to_restore = False
 save_training_images = False
-to_train = False
-to_test = True
+to_train = True
+to_test = False
 out_path = "./output"
 check_dir = "./output/checkpoints/"
 
@@ -27,9 +29,9 @@ check_dir = "./output/checkpoints/"
 class CycleGAN():
 
     def input_setup(self):
-        filename_A = tf.train.match_filenames_once("./Japanese_after_rotate/*.jpg")
+        filename_A = tf.train.match_filenames_once("./all/images/non-makeup/*.png")
         self.queue_length_A = tf.size(filename_A)
-        filename_B = tf.train.match_filenames_once("./smokey_after_rotate/*.jpg")
+        filename_B = tf.train.match_filenames_once("./all/images/makeup/*.png")
         self.queue_length_B = tf.size(filename_B)
 
         filename_A_queue = tf.train.string_input_producer(filename_A)
@@ -177,6 +179,7 @@ class CycleGAN():
         saver = tf.train.Saver()
 
         with tf.Session() as sess:
+
             sess.run(init)
 
             self.input_read(sess)
@@ -190,14 +193,14 @@ class CycleGAN():
             if not os.path.exists(check_dir):
                 os.makedirs(check_dir)
 
-            for epoch in range(sess.run(self.global_step),500):
+            for epoch in range(sess.run(self.global_step),900):
                 print("In the epoch",epoch)
                 saver.save(sess,os.path.join(check_dir,"cycleGAN"),global_step=epoch)
 
                 if epoch<100:
                     curr_lr = 0.0002
                 else:
-                    curr_lr = 0.0002-0.0002*(epoch-100)/400
+                    curr_lr = 0.0002-0.0002*(epoch-100)/800
 
                 if save_training_images:
                     self.save_training_images(sess,epoch)
@@ -270,9 +273,9 @@ class CycleGAN():
                     self.input_A:self.A_input[i],
                     self.input_B:self.B_input[i]
                 })
-                imsave("./output/imgs/fakeA_" + str(i) + ".jpg",
+                imsave("./output/imgs/test/fakeA_" + str(i) + ".jpg",
                        ((fake_A_temp[0] + 1) * 127.5).astype(np.uint8))
-                imsave("./output/imgs/fakeB_" + str(i) + ".jpg",
+                imsave("./output/imgs/test/fakeB_" + str(i) + ".jpg",
                        ((fake_B_temp[0] + 1) * 127.5).astype(np.uint8))
 
 
