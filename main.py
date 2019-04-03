@@ -2,6 +2,7 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES']='1'
 
 import tensorflow as tf
+from tensorflow.python.client import timeline
 import numpy as np
 from scipy.misc import imsave
 import random
@@ -20,8 +21,8 @@ max_images = 1050
 
 to_restore = False
 save_training_images = False
-to_train = True
-to_test = False
+to_train = False
+to_test = True
 out_path = "./output"
 check_dir = "./output/checkpoints/"
 
@@ -180,6 +181,9 @@ class CycleGAN():
 
         with tf.Session() as sess:
 
+            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+
             sess.run(init)
 
             self.input_read(sess)
@@ -212,8 +216,15 @@ class CycleGAN():
                     # optimize G_A
                     _, summary_str, fake_B_temp = sess.run(
                         [self.g_A_trainer, self.g_A_loss, self.fake_B],
-                        feed_dict={self.input_A:self.A_input[ptr],self.input_B:self.B_input[ptr],self.lr:curr_lr}
+                        feed_dict={self.input_A:self.A_input[ptr],self.input_B:self.B_input[ptr],self.lr:curr_lr},
+                        options=options,
+                        run_metadata=run_metadata,
                     )
+                    fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+                    chrom_trace = fetched_timeline.generate_chrome_trace_format()
+                    with open('timeline_01.json',"w") as f:
+                        f.write(chrom_trace)
+
                     writer.add_summary(summary_str,epoch*max_images+ptr)
                     fake_B_temp1 = self.fake_image_pool(self.num_fake_inputs,fake_B_temp,self.fake_images_B)
 
